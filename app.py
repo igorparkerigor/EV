@@ -25,6 +25,7 @@ def main():
             "Lokasyon": lokasyon,
             "Şarj Yüzdesi (%)": sarj_yuzdesi
         })
+        st.rerun()
     
     if st.session_state.veriler:
         df = pd.DataFrame(st.session_state.veriler)
@@ -64,10 +65,19 @@ def main():
         
         # Veri Düzenleme ve Silme
         st.write("### Veri Düzenleme/Silme")
-        index_to_remove = st.number_input("Silmek veya düzenlemek istediğiniz verinin indeksini girin", min_value=0, max_value=len(df)-1, step=1)
+        index_to_edit = st.number_input("Düzenlemek veya silmek istediğiniz verinin indeksini girin", min_value=0, max_value=len(df)-1, step=1)
+        
         if st.button("Veriyi Sil"):
-            del st.session_state.veriler[index_to_remove]
-            st.experimental_rerun()
+            del st.session_state.veriler[index_to_edit]
+            st.rerun()
+        
+        if st.button("Veriyi Düzenle"):
+            st.session_state.veriler[index_to_edit]["Tarih"] = st.date_input("Yeni Tarih", value=st.session_state.veriler[index_to_edit]["Tarih"])
+            st.session_state.veriler[index_to_edit]["Tüketim (kWh)"] = st.number_input("Yeni Tüketim (kWh)", value=st.session_state.veriler[index_to_edit]["Tüketim (kWh)"], min_value=0.0, step=0.1)
+            st.session_state.veriler[index_to_edit]["Maliyet (₺)"] = st.number_input("Yeni Maliyet (₺)", value=st.session_state.veriler[index_to_edit]["Maliyet (₺)"], min_value=0.0, step=0.1)
+            st.session_state.veriler[index_to_edit]["Lokasyon"] = st.text_input("Yeni Lokasyon", value=st.session_state.veriler[index_to_edit]["Lokasyon"])
+            st.session_state.veriler[index_to_edit]["Şarj Yüzdesi (%)"] = st.number_input("Yeni Şarj Yüzdesi (%)", value=st.session_state.veriler[index_to_edit]["Şarj Yüzdesi (%)"], min_value=1, max_value=100, step=1)
+            st.rerun()
 
 if __name__ == "__main__":
     main()
