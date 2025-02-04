@@ -11,28 +11,42 @@ def main():
     tuketim = st.sidebar.number_input("Tüketim (kWh)", min_value=0.0, step=0.1)
     maliyet = st.sidebar.number_input("Maliyet (₺)", min_value=0.0, step=0.1)
     lokasyon = st.sidebar.text_input("Lokasyon")
+    sarj_yuzdesi = st.sidebar.number_input("Şarj Yüzdesi (%)", min_value=1, max_value=100, step=1)
     ekle = st.sidebar.button("Veriyi Ekle")
     
     if "veriler" not in st.session_state:
         st.session_state.veriler = []
     
-    if ekle and tarih and tuketim > 0 and maliyet > 0 and lokasyon:
-        st.session_state.veriler.append({"Tarih": tarih, "Tüketim (kWh)": tuketim, "Maliyet (₺)": maliyet, "Lokasyon": lokasyon})
+    if ekle and tarih and tuketim > 0 and maliyet > 0 and lokasyon and sarj_yuzdesi:
+        st.session_state.veriler.append({
+            "Tarih": tarih, 
+            "Tüketim (kWh)": tuketim, 
+            "Maliyet (₺)": maliyet, 
+            "Lokasyon": lokasyon,
+            "Şarj Yüzdesi (%)": sarj_yuzdesi
+        })
     
     if st.session_state.veriler:
         df = pd.DataFrame(st.session_state.veriler)
+        df["Maliyet/kWh"] = df["Maliyet (₺)"] / df["Tüketim (kWh)"]
+        
         st.write("### Girilen Veriler")
         st.dataframe(df)
         
-        # Özet Bilgiler
-        toplam_maliyet = df["Maliyet (₺)"].sum()
-        ortalama_maliyet = df["Maliyet (₺)"].mean()
-        toplam_sarj = df.shape[0]
+        # Özet Bilgiler (Aylık Bazda)
+        df["Ay"] = df["Tarih"].apply(lambda x: x.strftime('%Y-%m'))
+        aylik_ozet = df.groupby("Ay").agg({
+            "Maliyet (₺)": "sum",
+            "Maliyet/kWh": "mean",
+            "Şarj Yüzdesi (%)": lambda x: x.sum() / 100
+        }).reset_index()
         
-        st.write("### Özet Bilgiler")
-        st.write(f"Toplam Maliyet: {toplam_maliyet:.2f} ₺")
-        st.write(f"Ortalama Maliyet: {ortalama_maliyet:.2f} ₺")
-        st.write(f"Toplam Şarj Döngüsü: {toplam_sarj}")
+        st.write("### Aylık Özet Bilgiler")
+        st.dataframe(aylik_ozet.rename(columns={
+            "Maliyet (₺)": "Toplam Maliyet (₺)",
+            "Maliyet/kWh": "Ortalama Maliyet/kWh (₺)",
+            "Şarj Yüzdesi (%)": "Toplam Şarj Döngüsü"
+        }))
         
         # Grafik Seçimi
         grafik_tipi = st.selectbox("Grafik Tipi Seçin", ["Çubuk Grafik", "Pasta Grafik"])
@@ -47,6 +61,13 @@ def main():
             ax.pie(df_grouped["Tüketim (kWh)"], labels=df_grouped["Lokasyon"], autopct='%1.1f%%', colors=["skyblue", "lightcoral", "lightgreen", "orange"])
         
         st.pyplot(fig)
+        
+        # Veri Düzenleme ve Silme
+        st.write("### Veri Düzenleme/Silme")
+        index_to_remove = st.number_input("Silmek veya düzenlemek istediğiniz verinin indeksini girin", min_value=0, max_value=len(df)-1, step=1)
+        if st.button("Veriyi Sil"):
+            del st.session_state.veriler[index_to_remove]
+            st.experimental_rerun()
 
 if __name__ == "__main__":
     main()
