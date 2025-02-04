@@ -43,32 +43,41 @@ def main():
             st.dataframe(df)
         
         # Özet Bilgiler (Aylık Bazda)
-        df["Ay"] = df["Tarih"].apply(lambda x: x.strftime('%Y-%m'))
-        aylik_ozet = df.groupby("Ay").agg({
-            "Maliyet (₺)": "sum",
-            "Maliyet/kWh": "mean",
-            "Şarj Yüzdesi (%)": lambda x: x.sum() / 100
-        }).reset_index()
-        
-        # Toplam ve ortalama ekleme
-        toplam_maliyet = aylik_ozet["Maliyet (₺)"].sum()
-        toplam_sarj_dongusu = aylik_ozet["Şarj Yüzdesi (%)"].sum()
-        ortalama_maliyet_kwh = aylik_ozet["Maliyet/kWh"].mean()
-        
-        toplam_satir = pd.DataFrame({
-            "Ay": ["Toplam"],
-            "Maliyet (₺)": [toplam_maliyet],
-            "Maliyet/kWh": [ortalama_maliyet_kwh],
-            "Şarj Yüzdesi (%)": [toplam_sarj_dongusu]
-        })
-        aylik_ozet = pd.concat([aylik_ozet, toplam_satir], ignore_index=True)
-        
-        st.write("### Aylık Özet Bilgiler")
-        st.dataframe(aylik_ozet.rename(columns={
-            "Maliyet (₺)": "Toplam Maliyet (₺)",
-            "Maliyet/kWh": "Ortalama Maliyet/kWh (₺)",
-            "Şarj Yüzdesi (%)": "Toplam Şarj Döngüsü"
-        }))
+df["Ay"] = df["Tarih"].apply(lambda x: x.strftime('%Y-%m'))
+aylik_ozet = df.groupby("Ay").agg({
+    "Maliyet (₺)": "sum",
+    "Tüketim (kWh)": "sum",
+    "Şarj Yüzdesi (%)": lambda x: x.sum() / 100
+}).reset_index()
+
+# Ortalama maliyet/kWh hesaplama (aylık toplam maliyet / toplam tüketim)
+aylik_ozet["Ortalama Maliyet/kWh (₺)"] = aylik_ozet["Maliyet (₺)"] / aylik_ozet["Tüketim (kWh)"]
+
+# Genel toplam hesaplama
+toplam_maliyet = aylik_ozet["Maliyet (₺)"].sum()
+toplam_tuketim = aylik_ozet["Tüketim (kWh)"].sum()
+toplam_sarj_dongusu = aylik_ozet["Şarj Yüzdesi (%)"].sum()
+
+# Tüm ayların toplam maliyetini toplam tüketime bölerek ortalama maliyet/kWh hesaplama
+ortalama_maliyet_kwh = toplam_maliyet / toplam_tuketim if toplam_tuketim > 0 else 0
+
+# Toplam satırını ekleme
+toplam_satir = pd.DataFrame({
+    "Ay": ["Toplam"],
+    "Maliyet (₺)": [toplam_maliyet],
+    "Tüketim (kWh)": [toplam_tuketim],
+    "Şarj Yüzdesi (%)": [toplam_sarj_dongusu],
+    "Ortalama Maliyet/kWh (₺)": [ortalama_maliyet_kwh]
+})
+
+aylik_ozet = pd.concat([aylik_ozet, toplam_satir], ignore_index=True)
+
+st.write("### Aylık Özet Bilgiler")
+st.dataframe(aylik_ozet.rename(columns={
+    "Maliyet (₺)": "Toplam Maliyet (₺)",
+    "Tüketim (kWh)": "Toplam Tüketim (kWh)",
+    "Şarj Yüzdesi (%)": "Toplam Şarj Döngüsü"
+}))
         
         # Grafik Seçimi
         grafik_tipi = st.selectbox("Grafik Tipi Seçin", ["Çubuk Grafik", "Pasta Grafik"])
