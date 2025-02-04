@@ -1,62 +1,40 @@
 import streamlit as st
 import pandas as pd
-import plotly.express as px
+import matplotlib.pyplot as plt
 
-# Başlık
-st.title("Elektrikli Araç Şarj İstatistikleri")
+def main():
+    st.title("Elektrikli Araç Şarj Takibi")
+    
+    # Kullanıcıdan manuel veri girişi
+    st.sidebar.header("Şarj Verilerini Girin")
+    tarih = st.sidebar.text_input("Tarih (YYYY-AA-GG)")
+    tuketim = st.sidebar.number_input("Tüketim (kWh)", min_value=0.0, step=0.1)
+    maliyet = st.sidebar.number_input("Maliyet (₺)", min_value=0.0, step=0.1)
+    ekle = st.sidebar.button("Veriyi Ekle")
+    
+    if "veriler" not in st.session_state:
+        st.session_state.veriler = []
+    
+    if ekle and tarih and tuketim > 0 and maliyet > 0:
+        st.session_state.veriler.append({"Tarih": tarih, "Tüketim (kWh)": tuketim, "Maliyet (₺)": maliyet})
+    
+    if st.session_state.veriler:
+        df = pd.DataFrame(st.session_state.veriler)
+        st.write("### Girilen Veriler")
+        st.dataframe(df)
+        
+        # Grafik Seçimi
+        grafik_tipi = st.selectbox("Grafik Tipi Seçin", ["Çubuk Grafik", "Pasta Grafik"])
+        
+        # Grafik Çizimi
+        fig, ax = plt.subplots()
+        if grafik_tipi == "Çubuk Grafik":
+            df.plot(x="Tarih", y="Tüketim (kWh)", kind="bar", ax=ax, color="skyblue")
+            ax.set_ylabel("Tüketim (kWh)")
+        else:
+            ax.pie(df["Tüketim (kWh)"], labels=df["Tarih"], autopct='%1.1f%%', colors=["skyblue", "lightcoral", "lightgreen"])
+        
+        st.pyplot(fig)
 
-# Kullanıcının veri yükleyebilmesi için bir dosya yükleme alanı
-dosya = st.file_uploader("Şarj verilerini içeren CSV dosyanızı yükleyin", type=["csv"])
-
-if dosya is not None:
-    # CSV dosyasını pandas ile oku
-    data = pd.read_csv(dosya)
-    
-    # "Tarih" sütununun formatını düzelt
-    if "Tarih" in data.columns:
-        data["Tarih"] = pd.to_datetime(data["Tarih"], errors="coerce").dt.strftime("%Y-%m-%d")
-    
-    # Sayısal sütunları uygun veri türlerine çevir
-    sayisal_sutunlar = ["Ücret (₺)", "Ortalama Maliyet (₺/kWh)", "Şarj Döngüsü"]
-    for sutun in sayisal_sutunlar:
-        if sutun in data.columns:
-            data[sutun] = pd.to_numeric(data[sutun], errors="coerce")
-    
-    # Kullanıcıya veriyi göster
-    st.subheader("Yüklenen Veriler")
-    st.dataframe(data)
-    
-    # Aylık toplam maliyet, ortalama maliyet ve şarj döngüsü hesaplama
-    data["Tarih"] = pd.to_datetime(data["Tarih"], errors="coerce")
-    data["Yıl-Ay"] = data["Tarih"].dt.to_period("M")
-    
-    aylik_veri = data.groupby("Yıl-Ay").agg({
-        "Ücret (₺)": "sum", 
-        "Ortalama Maliyet (₺/kWh)": "mean", 
-        "Şarj Döngüsü": "count"
-    }).reset_index()
-    
-    aylik_veri["Yıl-Ay"] = aylik_veri["Yıl-Ay"].astype(str)
-    
-    # Kullanıcıya aylık istatistikleri göster
-    st.subheader("Aylık Şarj İstatistikleri")
-    st.dataframe(aylik_veri)
-    
-    # Kullanıcıya grafik türü seçtirme
-    grafik_turu = st.selectbox("Grafik Türü Seçin", ["Çubuk Grafik", "Pasta Grafiği"])
-    
-    if grafik_turu == "Çubuk Grafik":
-        fig = px.bar(
-            aylik_veri, x="Yıl-Ay", y="Ücret (₺)", 
-            title="Aylık Toplam Şarj Maliyetleri", 
-            labels={"Yıl-Ay": "Ay", "Ücret (₺)": "Toplam Maliyet (₺)"},
-            text_auto=True, color_discrete_sequence=["#636EFA"]
-        )
-    else:
-        fig = px.pie(
-            aylik_veri, values="Ücret (₺)", names="Yıl-Ay", 
-            title="Aylık Maliyet Dağılımı", 
-            color_discrete_sequence=px.colors.sequential.Blues
-        )
-    
-    st.plotly_chart(fig)
+if __name__ == "__main__":
+    main()
