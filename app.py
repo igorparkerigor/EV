@@ -31,8 +31,16 @@ def main():
         df = pd.DataFrame(st.session_state.veriler)
         df["Maliyet/kWh"] = df["Maliyet (₺)"] / df["Tüketim (kWh)"]
         
-        st.write("### Girilen Veriler")
-        st.dataframe(df)
+        # Verileri gizleme/gösterme butonu
+        if "show_data" not in st.session_state:
+            st.session_state.show_data = True
+        
+        if st.button("Girilen Verileri Göster/Gizle"):
+            st.session_state.show_data = not st.session_state.show_data
+        
+        if st.session_state.show_data:
+            st.write("### Girilen Veriler")
+            st.dataframe(df)
         
         # Özet Bilgiler (Aylık Bazda)
         df["Ay"] = df["Tarih"].apply(lambda x: x.strftime('%Y-%m'))
@@ -41,6 +49,18 @@ def main():
             "Maliyet/kWh": "mean",
             "Şarj Yüzdesi (%)": lambda x: x.sum() / 100
         }).reset_index()
+        
+        # Toplam ve ortalama ekleme
+        toplam_maliyet = aylik_ozet["Maliyet (₺)"].sum()
+        toplam_sarj_dongusu = aylik_ozet["Şarj Yüzdesi (%)"].sum()
+        ortalama_maliyet_kwh = aylik_ozet["Maliyet/kWh"].mean()
+        
+        aylik_ozet = aylik_ozet.append({
+            "Ay": "Toplam",
+            "Maliyet (₺)": toplam_maliyet,
+            "Maliyet/kWh": ortalama_maliyet_kwh,
+            "Şarj Yüzdesi (%)": toplam_sarj_dongusu
+        }, ignore_index=True)
         
         st.write("### Aylık Özet Bilgiler")
         st.dataframe(aylik_ozet.rename(columns={
