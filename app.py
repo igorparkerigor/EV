@@ -55,12 +55,13 @@ def main():
         toplam_sarj_dongusu = aylik_ozet["Şarj Yüzdesi (%)"].sum()
         ortalama_maliyet_kwh = aylik_ozet["Maliyet/kWh"].mean()
         
-        aylik_ozet = aylik_ozet.append({
-            "Ay": "Toplam",
-            "Maliyet (₺)": toplam_maliyet,
-            "Maliyet/kWh": ortalama_maliyet_kwh,
-            "Şarj Yüzdesi (%)": toplam_sarj_dongusu
-        }, ignore_index=True)
+        toplam_satir = pd.DataFrame({
+            "Ay": ["Toplam"],
+            "Maliyet (₺)": [toplam_maliyet],
+            "Maliyet/kWh": [ortalama_maliyet_kwh],
+            "Şarj Yüzdesi (%)": [toplam_sarj_dongusu]
+        })
+        aylik_ozet = pd.concat([aylik_ozet, toplam_satir], ignore_index=True)
         
         st.write("### Aylık Özet Bilgiler")
         st.dataframe(aylik_ozet.rename(columns={
@@ -92,11 +93,12 @@ def main():
             st.rerun()
         
         with st.expander("Veriyi Düzenle"):
-            tarih_yeni = st.date_input("Yeni Tarih", value=st.session_state.veriler[index_to_edit]["Tarih"])
-            tuketim_yeni = st.number_input("Yeni Tüketim (kWh)", value=st.session_state.veriler[index_to_edit]["Tüketim (kWh)"], min_value=0.0, step=0.1)
-            maliyet_yeni = st.number_input("Yeni Maliyet (₺)", value=st.session_state.veriler[index_to_edit]["Maliyet (₺)"], min_value=0.0, step=0.1)
-            lokasyon_yeni = st.text_input("Yeni Lokasyon", value=st.session_state.veriler[index_to_edit]["Lokasyon"])
-            sarj_yuzdesi_yeni = st.number_input("Yeni Şarj Yüzdesi (%)", value=st.session_state.veriler[index_to_edit]["Şarj Yüzdesi (%)"], min_value=1, max_value=100, step=1)
+            veri = st.session_state.veriler[index_to_edit]
+            tarih_yeni = st.date_input("Yeni Tarih", value=veri["Tarih"])
+            tuketim_yeni = st.number_input("Yeni Tüketim (kWh)", value=veri["Tüketim (kWh)"], min_value=0.0, step=0.1)
+            maliyet_yeni = st.number_input("Yeni Maliyet (₺)", value=veri["Maliyet (₺)"], min_value=0.0, step=0.1)
+            lokasyon_yeni = st.text_input("Yeni Lokasyon", value=veri["Lokasyon"])
+            sarj_yuzdesi_yeni = st.number_input("Yeni Şarj Yüzdesi (%)", value=veri["Şarj Yüzdesi (%)"], min_value=1, max_value=100, step=1)
             
             if st.button("Kaydet"):
                 st.session_state.veriler[index_to_edit] = {
