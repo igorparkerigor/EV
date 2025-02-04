@@ -71,13 +71,22 @@ def main():
             del st.session_state.veriler[index_to_edit]
             st.rerun()
         
-        if st.button("Veriyi Düzenle"):
-            st.session_state.veriler[index_to_edit]["Tarih"] = st.date_input("Yeni Tarih", value=st.session_state.veriler[index_to_edit]["Tarih"])
-            st.session_state.veriler[index_to_edit]["Tüketim (kWh)"] = st.number_input("Yeni Tüketim (kWh)", value=st.session_state.veriler[index_to_edit]["Tüketim (kWh)"], min_value=0.0, step=0.1)
-            st.session_state.veriler[index_to_edit]["Maliyet (₺)"] = st.number_input("Yeni Maliyet (₺)", value=st.session_state.veriler[index_to_edit]["Maliyet (₺)"], min_value=0.0, step=0.1)
-            st.session_state.veriler[index_to_edit]["Lokasyon"] = st.text_input("Yeni Lokasyon", value=st.session_state.veriler[index_to_edit]["Lokasyon"])
-            st.session_state.veriler[index_to_edit]["Şarj Yüzdesi (%)"] = st.number_input("Yeni Şarj Yüzdesi (%)", value=st.session_state.veriler[index_to_edit]["Şarj Yüzdesi (%)"], min_value=1, max_value=100, step=1)
-            st.rerun()
+        with st.expander("Veriyi Düzenle"):
+            tarih_yeni = st.date_input("Yeni Tarih", value=st.session_state.veriler[index_to_edit]["Tarih"])
+            tuketim_yeni = st.number_input("Yeni Tüketim (kWh)", value=st.session_state.veriler[index_to_edit]["Tüketim (kWh)"], min_value=0.0, step=0.1)
+            maliyet_yeni = st.number_input("Yeni Maliyet (₺)", value=st.session_state.veriler[index_to_edit]["Maliyet (₺)"], min_value=0.0, step=0.1)
+            lokasyon_yeni = st.text_input("Yeni Lokasyon", value=st.session_state.veriler[index_to_edit]["Lokasyon"])
+            sarj_yuzdesi_yeni = st.number_input("Yeni Şarj Yüzdesi (%)", value=st.session_state.veriler[index_to_edit]["Şarj Yüzdesi (%)"], min_value=1, max_value=100, step=1)
+            
+            if st.button("Kaydet"):
+                st.session_state.veriler[index_to_edit] = {
+                    "Tarih": tarih_yeni,
+                    "Tüketim (kWh)": tuketim_yeni,
+                    "Maliyet (₺)": maliyet_yeni,
+                    "Lokasyon": lokasyon_yeni,
+                    "Şarj Yüzdesi (%)": sarj_yuzdesi_yeni
+                }
+                st.rerun()
 
 if __name__ == "__main__":
     main()
